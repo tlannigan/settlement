@@ -1,0 +1,5 @@
+name: Settlement
+version: 0.1
+author: tlannigan
+main: ca.tlannigan.settlement.Settlement
+api-version: 1.16
