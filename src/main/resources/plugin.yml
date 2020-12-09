@@ -3,3 +3,8 @@ version: 0.1
 author: tlannigan
 main: ca.tlannigan.settlement.Settlement
 api-version: 1.16
+commands:
+  description:
+    description: How this plugin works
+    usage: /description
+    permission: settlement.commands.info
