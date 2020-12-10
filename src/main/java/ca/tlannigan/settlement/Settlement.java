@@ -6,8 +6,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Settlement extends JavaPlugin {
     @Override
     public void onEnable(){
-        getLogger().info("onEnable is called!");
+        getLogger().info("Settlements will reign");
         this.getCommand("description").setExecutor(new CommandDescription());
+        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
     }
 
     @Override

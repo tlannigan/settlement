@@ -7,4 +7,4 @@ commands:
   description:
     description: How this plugin works
     usage: /description
-    permission: settlement.commands.info
+    permission: settlement.info.description
