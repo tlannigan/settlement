@@ -1,15 +1,16 @@
 package ca.tlannigan.settlement;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
-import java.util.ArrayList;
+import static java.util.Objects.isNull;
+
 
 public class PlayerListener implements Listener {
 
@@ -25,6 +26,20 @@ public class PlayerListener implements Listener {
         blueprint.setItemMeta(bm);
 
         event.getPlayer().getInventory().addItem(blueprint);
+    }
+
+    @EventHandler
+    public void onBookInteract(PlayerInteractEvent event) {
+        if (event.getMaterial() == Material.WRITTEN_BOOK) {
+            ItemStack item = event.getItem();
+            BookMeta bm = (BookMeta) item.getItemMeta();
+            if (bm.getTitle().equals("Settlement")) {
+                if (!isNull(event.getClickedBlock())) {
+                    event.getPlayer().sendMessage("Title: " + bm.getTitle());
+                    event.getPlayer().sendMessage("Start setting up your settlement!");
+                }
+            }
+        }
     }
 
 }
