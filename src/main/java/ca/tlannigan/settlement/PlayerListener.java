@@ -9,6 +9,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
+import java.util.ArrayList;
+
 public class PlayerListener implements Listener {
 
     @EventHandler
@@ -17,7 +19,8 @@ public class PlayerListener implements Listener {
         BookMeta bm = (BookMeta) blueprint.getItemMeta();
 
         bm.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3&lSettlement Blueprint"));
-        bm.addPage("Settlement\nUse this blueprint to start your first settlement!");
+        bm.addPage("Use this blueprint to start your first settlement!");
+        bm.setTitle("Settlement");
         bm.setAuthor("MrCreamsicle");
         blueprint.setItemMeta(bm);
 
