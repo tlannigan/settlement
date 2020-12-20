@@ -2,6 +2,7 @@ package ca.tlannigan.settlement;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -16,16 +17,20 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        ItemStack blueprint = new ItemStack(Material.WRITTEN_BOOK);
-        BookMeta bm = (BookMeta) blueprint.getItemMeta();
+        Player player = event.getPlayer();
 
-        bm.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3&lSettlement Blueprint"));
-        bm.addPage("Use this blueprint to start your first settlement!");
-        bm.setTitle("Settlement");
-        bm.setAuthor("MrCreamsicle");
-        blueprint.setItemMeta(bm);
+        if(!player.hasPlayedBefore()) {
+            ItemStack blueprint = new ItemStack(Material.WRITTEN_BOOK);
+            BookMeta bm = (BookMeta) blueprint.getItemMeta();
 
-        event.getPlayer().getInventory().addItem(blueprint);
+            bm.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3&lSettlement Blueprint"));
+            bm.addPage("Use this blueprint to start your first settlement!");
+            bm.setTitle("Settlement");
+            bm.setAuthor("Settlement");
+            blueprint.setItemMeta(bm);
+
+            player.getInventory().addItem(blueprint);
+        }
     }
 
     @EventHandler
@@ -35,8 +40,9 @@ public class PlayerListener implements Listener {
             BookMeta bm = (BookMeta) item.getItemMeta();
             if (bm.getTitle().equals("Settlement")) {
                 if (!isNull(event.getClickedBlock())) {
-                    event.getPlayer().sendMessage("Title: " + bm.getTitle());
-                    event.getPlayer().sendMessage("Start setting up your settlement!");
+                    Player player = event.getPlayer();
+                    player.sendMessage("Title: " + bm.getTitle());
+                    player.sendMessage("Start setting up your settlement!");
                 }
             }
         }
