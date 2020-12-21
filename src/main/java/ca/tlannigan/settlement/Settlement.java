@@ -24,8 +24,8 @@ public class Settlement extends JavaPlugin {
         MongoDatabase database = mongoClient.getDatabase("sample_weatherdata");
         MongoCollection<Document> coll = database.getCollection("data");
 
+        // Register commands and listeners
         this.getCommand("description").setExecutor(new CommandDescription());
-        this.saveDefaultConfig();
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
     }
 
