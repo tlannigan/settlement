@@ -1,0 +1,1 @@
+mongo_connection_string: mongodb+srv://tlannigan:PmU9F334CtgZiuC@spigotcluster.ahu5k.mongodb.net/sample_weatherdata?retryWrites=true&w=majority
