@@ -1,7 +1,9 @@
 package ca.tlannigan.settlement;
 
+import ca.tlannigan.settlement.utils.DatabaseHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,11 +17,23 @@ import static java.util.Objects.isNull;
 
 public class PlayerListener implements Listener {
 
+    private FileConfiguration config;
+
+    public PlayerListener(FileConfiguration config) {
+        super();
+        this.config = config;
+    }
+
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
         if(!player.hasPlayedBefore()) {
+            // Create player profile in database
+            DatabaseHandler DatabaseHandler = new DatabaseHandler(config);
+            DatabaseHandler.createPlayer(player);
+
+            // Give player Settlement Blueprint item
             ItemStack blueprint = new ItemStack(Material.WRITTEN_BOOK);
             BookMeta bm = (BookMeta) blueprint.getItemMeta();
 

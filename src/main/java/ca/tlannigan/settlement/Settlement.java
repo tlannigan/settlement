@@ -18,15 +18,10 @@ public class Settlement extends JavaPlugin {
         this.saveDefaultConfig();
         FileConfiguration config = this.getConfig();
 
-        // Connect to MongoDB
-        String connString = config.getString("mongo_connection_string");
-        MongoClient mongoClient = MongoClients.create(connString);
-        MongoDatabase database = mongoClient.getDatabase("sample_weatherdata");
-        MongoCollection<Document> coll = database.getCollection("data");
 
         // Register commands and listeners
         this.getCommand("description").setExecutor(new CommandDescription());
-        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerListener(config), this);
     }
 
     @Override
