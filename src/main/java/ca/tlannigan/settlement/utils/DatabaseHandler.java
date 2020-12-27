@@ -13,12 +13,11 @@ import org.bukkit.entity.Player;
 import java.util.Arrays;
 
 public class DatabaseHandler {
-    private String connString = "";
-    private MongoClient mongoClient;
-    private MongoCollection<Document> playerCollection;
+    private final MongoClient mongoClient;
+    private final MongoCollection<Document> playerCollection;
 
     public DatabaseHandler(FileConfiguration config) {
-        this.connString = config.getString("mongo_connection_string");
+        String connString = config.getString("mongo_connection_string");
 
         // Connect to MongoDB
         this.mongoClient = MongoClients.create(connString);
