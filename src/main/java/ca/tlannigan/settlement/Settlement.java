@@ -1,6 +1,7 @@
 package ca.tlannigan.settlement;
 
 import ca.tlannigan.settlement.commands.CommandDescription;
+import ca.tlannigan.settlement.utils.DatabaseHandler;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
