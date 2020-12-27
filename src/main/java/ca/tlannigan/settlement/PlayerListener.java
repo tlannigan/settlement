@@ -44,6 +44,8 @@ public class PlayerListener implements Listener {
             blueprint.setItemMeta(bm);
 
             player.getInventory().addItem(blueprint);
+
+            DatabaseHandler.closeClient();
         }
     }
 
@@ -61,5 +63,4 @@ public class PlayerListener implements Listener {
             }
         }
     }
-
 }

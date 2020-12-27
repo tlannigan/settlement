@@ -18,7 +18,6 @@ public class Settlement extends JavaPlugin {
         this.saveDefaultConfig();
         FileConfiguration config = this.getConfig();
 
-
         // Register commands and listeners
         this.getCommand("description").setExecutor(new CommandDescription());
         getServer().getPluginManager().registerEvents(new PlayerListener(config), this);
