@@ -25,6 +25,12 @@ public class DatabaseHandler {
         this.playerCollection = database.getCollection("player");
     }
 
+    public Document getPlayer(Player player) {
+        String uuid = player.getUniqueId().toString();
+        Document playerDoc = playerCollection.find(Filters.eq("_id", uuid)).first();
+        return playerDoc;
+    }
+
     public void createPlayer(Player player) {
         String uuid = player.getUniqueId().toString();
 
