@@ -1,15 +1,18 @@
-package ca.tlannigan.settlement.utils;
+package ca.tlannigan.settlement;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
 import java.util.Arrays;
+import java.util.List;
 
 public class DatabaseHandler {
     private final MongoClient mongoClient;
@@ -24,15 +27,11 @@ public class DatabaseHandler {
         this.playerCollection = database.getCollection("player");
     }
 
-    public Document getPlayer(Player player) {
-        String uuid = player.getUniqueId().toString();
-        Document playerDoc = playerCollection.find(Filters.eq("_id", uuid)).first();
-        return playerDoc;
+    public Document getPlayer(String uuid) {
+        return playerCollection.find(eq("_id", uuid)).first();
     }
 
-    public void createPlayer(Player player) {
-        String uuid = player.getUniqueId().toString();
-
+    public void createPlayer(String uuid) {
         if (!doesPlayerExist(uuid)) {
             Document newPlayer = new Document("_id", uuid)
                     .append("settlement",
@@ -71,20 +70,39 @@ public class DatabaseHandler {
         }
     }
 
+    public void updatePlayer(String uuid, String fieldPath, int value) {
+        playerCollection.updateOne(eq("_id", uuid), set(fieldPath, value));
+    }
+
+    public void updatePlayer(String uuid, String fieldPath, List<Integer> value) {
+        playerCollection.updateOne(eq("_id", uuid), set(fieldPath, value));
+    }
+
+    public void closeClient() {
+        mongoClient.close();
+    }
+
     private Boolean doesPlayerExist(String uuid) {
-        if (playerCollection.countDocuments(Filters.eq("_id", uuid)) < 1) {
+        if (playerCollection.countDocuments(eq("_id", uuid)) < 1) {
             return false;
         } else {
             return true;
         }
     }
 
-    public void closeClient() {
-        mongoClient.close();
+    private String getUUID(Player player) {
+        return player.getUniqueId().toString();
     }
 }
 
 /*  playerDocument = {
  *      _id: 12348-9703465-627345
+ *      settlement: {
+ *          home: {
+ *              level: 0,
+ *              location: [ 0, 0, 0 ]
+ *          },
+ *          etc for every building
+ *      }
  *  }
  */
