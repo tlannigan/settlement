@@ -71,6 +71,7 @@
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
             <version>7.2.0</version>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

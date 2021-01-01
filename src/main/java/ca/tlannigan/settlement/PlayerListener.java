@@ -80,15 +80,16 @@ public class PlayerListener implements Listener {
             }
             if (
                     bm != null &&
-                            bm.getTitle() != null &&
-                            bm.getTitle().equals("Settlement")
+                    bm.getTitle() != null &&
+                    bm.getTitle().equals("Settlement")
             ) {
-                if (!isNull(event.getClickedBlock())) {
+                if (nonNull(event.getClickedBlock())) {
                     Player player = event.getPlayer();
                     String uuid = getUUID(player);
 
                     Document playerDoc = dbHandler.getPlayer(uuid);
-                    Document playerHome = playerDoc.get("settlement.home", Document.class);
+                    Document playerSettlement = playerDoc.get("settlement", Document.class);
+                    Document playerHome = playerSettlement.get("home", Document.class);
 
                     if (playerHome.getInteger("level") == 0) {
                         player.sendMessage("Starting your settlement at this location");
@@ -96,23 +97,26 @@ public class PlayerListener implements Listener {
 
                         List<Integer> homeCoords = playerHome.getList("location", Integer.class);
                         homeCoords.set(0, clickedLocation.getBlockX());
-                        homeCoords.set(1, clickedLocation.getBlockY());
+                        homeCoords.set(1, clickedLocation.getBlockY() + 1);
                         homeCoords.set(2, clickedLocation.getBlockZ());
 
                         dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
                         dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
+
+                        Clipboard home = loadStructure("home1");
+                        createStructure(player, home, clickedLocation);
                     }
                 }
             }
         }
     }
 
-    private Clipboard loadStructure() {
+    private Clipboard loadStructure(String name) {
         Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("Settlement");
         File file;
         Clipboard clipboard = null;
         if (nonNull(plugin)) {
-            file = new File(plugin.getDataFolder().getAbsolutePath() + "/house.schem");
+            file = new File(plugin.getDataFolder().getAbsolutePath() + "\\" + name + ".schem");
             ClipboardFormat format = ClipboardFormats.findByFile(file);
 
             try {
@@ -126,18 +130,21 @@ public class PlayerListener implements Listener {
         return clipboard;
     }
 
-    private void createStructure(Player player, Clipboard clipboard, List<Integer> coords) {
-        org.bukkit.World world = Bukkit.getWorld(getUUID(player));
+    private void createStructure(Player player, Clipboard clipboard, Location loc) {
+        org.bukkit.World world = loc.getWorld();
 
         if (nonNull(world)) {
+            System.out.println(2);
             World adaptedWorld = BukkitAdapter.adapt(world);
             try (EditSession editSession = WorldEdit.getInstance().newEditSession(adaptedWorld)) {
+                System.out.println(3);
                 Operation operation = new ClipboardHolder(clipboard)
                         .createPaste(editSession)
-                        .to(BlockVector3.at(coords.get(0), coords.get(1), coords.get(2)))
-                        .ignoreAirBlocks(false)
+                        .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY() + 1, loc.getBlockZ()))
+                        .ignoreAirBlocks(true)
                         .build();
                 Operations.complete(operation);
+                System.out.println(4);
             } catch (WorldEditException e) {
                 e.printStackTrace();
             }
