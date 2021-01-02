@@ -66,7 +66,7 @@ public class StructureBuilder {
                 System.out.println(3);
                 Operation operation = new ClipboardHolder(clipboard)
                         .createPaste(editSession)
-                        .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY() + 1, loc.getBlockZ()))
+                        .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))
                         .ignoreAirBlocks(true)
                         .build();
                 Operations.complete(operation);

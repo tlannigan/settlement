@@ -16,7 +16,6 @@ import org.bukkit.inventory.meta.BookMeta;
 
 import java.util.List;
 
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 
@@ -72,7 +71,7 @@ public class PlayerListener implements Listener {
 
                 List<Integer> homeCoords = playerHome.getList("location", Integer.class);
                 homeCoords.set(0, playerLoc.getBlockX());
-                homeCoords.set(1, playerLoc.getBlockY() + 1);
+                homeCoords.set(1, playerLoc.getBlockY());
                 homeCoords.set(2, playerLoc.getBlockZ());
 
                 dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
