@@ -1,20 +1,7 @@
 package ca.tlannigan.settlement;
 
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.world.World;
 import org.bson.Document;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,15 +13,11 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.plugin.Plugin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.List;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 
 public class PlayerListener implements Listener {
@@ -73,80 +56,31 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onBookInteract(PlayerInteractEvent event) {
         if (event.getMaterial() == Material.WRITTEN_BOOK) {
-            ItemStack item = event.getItem();
-            BookMeta bm = null;
-            if (item != null) {
-                bm = (BookMeta) item.getItemMeta();
-            }
-            if (
-                    bm != null &&
-                    bm.getTitle() != null &&
-                    bm.getTitle().equals("Settlement")
-            ) {
-                if (nonNull(event.getClickedBlock())) {
-                    Player player = event.getPlayer();
-                    String uuid = getUUID(player);
+            ItemStack item = requireNonNull(event.getItem());
+            BookMeta bm = (BookMeta) item.getItemMeta();
 
-                    Document playerDoc = dbHandler.getPlayer(uuid);
-                    Document playerSettlement = playerDoc.get("settlement", Document.class);
-                    Document playerHome = playerSettlement.get("home", Document.class);
+            Player player = event.getPlayer();
+            String uuid = getUUID(player);
 
-                    if (playerHome.getInteger("level") == 0) {
-                        player.sendMessage("Starting your settlement at this location");
-                        Location clickedLocation = event.getClickedBlock().getLocation();
+            Document playerDoc = dbHandler.getPlayer(uuid);
+            Document playerSettlement = playerDoc.get("settlement", Document.class);
+            Document playerHome = playerSettlement.get("home", Document.class);
 
-                        List<Integer> homeCoords = playerHome.getList("location", Integer.class);
-                        homeCoords.set(0, clickedLocation.getBlockX());
-                        homeCoords.set(1, clickedLocation.getBlockY() + 1);
-                        homeCoords.set(2, clickedLocation.getBlockZ());
+            if (playerHome.getInteger("level") == 0) {
+                player.sendMessage("Starting your settlement at this location");
+                Location playerLoc = player.getLocation();
 
-                        dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
-                        dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
+                List<Integer> homeCoords = playerHome.getList("location", Integer.class);
+                homeCoords.set(0, playerLoc.getBlockX());
+                homeCoords.set(1, playerLoc.getBlockY() + 1);
+                homeCoords.set(2, playerLoc.getBlockZ());
 
-                        Clipboard home = loadStructure("home1");
-                        createStructure(player, home, clickedLocation);
-                    }
-                }
-            }
-        }
-    }
+                dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
+                dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
 
-    private Clipboard loadStructure(String name) {
-        Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("Settlement");
-        File file;
-        Clipboard clipboard = null;
-        if (nonNull(plugin)) {
-            file = new File(plugin.getDataFolder().getAbsolutePath() + "\\" + name + ".schem");
-            ClipboardFormat format = ClipboardFormats.findByFile(file);
-
-            try {
-                ClipboardReader reader = format.getReader(new FileInputStream(file));
-                clipboard = reader.read();
-            } catch (NullPointerException | IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return clipboard;
-    }
-
-    private void createStructure(Player player, Clipboard clipboard, Location loc) {
-        org.bukkit.World world = loc.getWorld();
-
-        if (nonNull(world)) {
-            System.out.println(2);
-            World adaptedWorld = BukkitAdapter.adapt(world);
-            try (EditSession editSession = WorldEdit.getInstance().newEditSession(adaptedWorld)) {
-                System.out.println(3);
-                Operation operation = new ClipboardHolder(clipboard)
-                        .createPaste(editSession)
-                        .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY() + 1, loc.getBlockZ()))
-                        .ignoreAirBlocks(true)
-                        .build();
-                Operations.complete(operation);
-                System.out.println(4);
-            } catch (WorldEditException e) {
-                e.printStackTrace();
+                StructureBuilder structBuilder = new StructureBuilder(player, playerLoc);
+                Clipboard newHome = structBuilder.load("home1");
+                structBuilder.build(newHome);
             }
         }
     }
