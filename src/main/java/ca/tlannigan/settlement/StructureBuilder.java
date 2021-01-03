@@ -1,5 +1,6 @@
 package ca.tlannigan.settlement;
 
+import com.destroystokyo.paper.ParticleBuilder;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
@@ -15,6 +16,7 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -30,9 +32,9 @@ public class StructureBuilder {
     final private Player player;
     final private Location loc;
 
-    public StructureBuilder(Player player, Location loc) {
+    public StructureBuilder(Player player) {
         this.player = player;
-        this.loc = loc;
+        this.loc = player.getLocation();
     }
 
     public Clipboard load(String name) {
@@ -60,20 +62,19 @@ public class StructureBuilder {
         org.bukkit.World world = loc.getWorld();
 
         if (nonNull(world)) {
-            System.out.println(2);
             World adaptedWorld = BukkitAdapter.adapt(world);
             try (EditSession editSession = WorldEdit.getInstance().newEditSession(adaptedWorld)) {
-                System.out.println(3);
                 Operation operation = new ClipboardHolder(clipboard)
                         .createPaste(editSession)
                         .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))
                         .ignoreAirBlocks(true)
                         .build();
                 Operations.complete(operation);
-                System.out.println(4);
             } catch (WorldEditException e) {
                 e.printStackTrace();
             }
         }
+
+        System.out.println(clipboard.getDimensions());
     }
 }
