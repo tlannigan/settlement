@@ -9,11 +9,15 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.plugin.Plugin;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,11 +26,15 @@ import static java.util.Objects.requireNonNull;
 
 public class PlayerListener implements Listener {
 
+    private final Plugin plugin;
     private final DatabaseHandler dbHandler;
+    private HashMap<String, Location> confirmedBuildLocations;
 
     public PlayerListener(FileConfiguration config) {
         super();
+        this.plugin = Bukkit.getPluginManager().getPlugin("Settlement");
         this.dbHandler = new DatabaseHandler(config);
+        this.confirmedBuildLocations = new HashMap<String, Location>();
     }
 
     @EventHandler
@@ -55,36 +63,50 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBookInteract(PlayerInteractEvent event) {
-        if (event.getMaterial() == Material.WRITTEN_BOOK) {
-            ItemStack item = requireNonNull(event.getItem());
-            BookMeta bm = (BookMeta) item.getItemMeta();
+        if (event.getHand() == EquipmentSlot.HAND && event.getMaterial() == Material.WRITTEN_BOOK) {
+            Action action = event.getAction();
 
-            if (bm != null && Objects.equals(bm.getTitle(), "Settlement")) {
-                Player player = event.getPlayer();
-                String uuid = getUUID(player);
+            if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+                ItemStack item = requireNonNull(event.getItem());
+                BookMeta bm = (BookMeta) item.getItemMeta();
 
-                Document playerDoc = dbHandler.getPlayer(uuid);
-                Document playerSettlement = playerDoc.get("settlement", Document.class);
-                Document playerHome = playerSettlement.get("home", Document.class);
-
-                if (playerHome.getInteger("level") == 0) {
-                    player.sendMessage("Starting your settlement at this location");
+                if (bm != null && Objects.equals(bm.getTitle(), "Settlement")) {
+                    Player player = event.getPlayer();
+                    String uuid = getUUID(player);
                     Location playerLoc = player.getLocation();
 
-                    List<Integer> homeCoords = playerHome.getList("location", Integer.class);
-                    homeCoords.set(0, playerLoc.getBlockX());
-                    homeCoords.set(1, playerLoc.getBlockY());
-                    homeCoords.set(2, playerLoc.getBlockZ());
+                    Document playerDoc = dbHandler.getPlayer(uuid);
+                    Document playerSettlement = playerDoc.get("settlement", Document.class);
+                    Document playerHome = playerSettlement.get("home", Document.class);
 
-                    dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
-                    dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
+                    if (playerHome.getInteger("level") == 0) {
+                        StructureBuilder structBuilder = new StructureBuilder(player);
+                        Clipboard newHome = structBuilder.load("home1");
+                        BlockVector3 dimensions = newHome.getDimensions();
 
-                    StructureBuilder structBuilder = new StructureBuilder(player);
-                    Clipboard newHome = structBuilder.load("home1");
-                    BlockVector3 dimensions = newHome.getDimensions();
-                    structBuilder.build(newHome);
+                        if (confirmedBuildLocations.containsKey(uuid)) {
+                            player.sendMessage("Settling down here");
+                            Location buildLocation = confirmedBuildLocations.get(uuid);
 
-                    createParticleBoundary(player, newHome);
+                            List<Integer> homeCoords = playerHome.getList("location", Integer.class);
+                            homeCoords.set(0, buildLocation.getBlockX());
+                            homeCoords.set(1, buildLocation.getBlockY());
+                            homeCoords.set(2, buildLocation.getBlockZ());
+
+                            dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
+                            dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
+
+                            structBuilder.build(newHome);
+                        } else {
+                            confirmedBuildLocations.put(uuid, playerLoc);
+                            createParticleBoundary(player, newHome);
+                            player.sendMessage("Right-click again to confirm building your home here, or wait 5s to cancel.");
+                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                                confirmedBuildLocations.remove(uuid);
+                            }, 100L);
+
+                        }
+                    }
                 }
             }
         }
@@ -138,7 +160,7 @@ public class PlayerListener implements Listener {
 
         for (int i = 0; i < 8; i++) {
             new ParticleBuilder(Particle.REDSTONE)
-                    .data(new Particle.DustOptions(Color.GREEN, 5.0f))
+                    .data(new Particle.DustOptions(Color.RED, 5.0f))
                     .count(5)
                     .location(locations[i])
                     .receivers(player)
