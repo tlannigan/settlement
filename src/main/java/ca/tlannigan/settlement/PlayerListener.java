@@ -11,12 +11,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -63,53 +65,21 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onBookInteract(PlayerInteractEvent event) {
-        if (event.getHand() == EquipmentSlot.HAND && event.getMaterial() == Material.WRITTEN_BOOK) {
-            Action action = event.getAction();
-
-            if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-                ItemStack item = requireNonNull(event.getItem());
-                BookMeta bm = (BookMeta) item.getItemMeta();
-
-                if (bm != null && Objects.equals(bm.getTitle(), "Settlement")) {
-                    Player player = event.getPlayer();
-                    String uuid = getUUID(player);
-                    Location playerLoc = player.getLocation();
-
-                    Document playerDoc = dbHandler.getPlayer(uuid);
-                    Document playerSettlement = playerDoc.get("settlement", Document.class);
-                    Document playerHome = playerSettlement.get("home", Document.class);
-
-                    if (playerHome.getInteger("level") == 0) {
-                        StructureBuilder structBuilder = new StructureBuilder(player);
-                        Clipboard newHome = structBuilder.load("home1");
-                        BlockVector3 dimensions = newHome.getDimensions();
-
-                        if (confirmedBuildLocations.containsKey(uuid)) {
-                            player.sendMessage("Settling down here");
-                            Location buildLocation = confirmedBuildLocations.get(uuid);
-
-                            List<Integer> homeCoords = playerHome.getList("location", Integer.class);
-                            homeCoords.set(0, buildLocation.getBlockX());
-                            homeCoords.set(1, buildLocation.getBlockY());
-                            homeCoords.set(2, buildLocation.getBlockZ());
-
-                            dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
-                            dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
-
-                            structBuilder.build(newHome);
-                        } else {
-                            confirmedBuildLocations.put(uuid, playerLoc);
-                            createParticleBoundary(player, newHome);
-                            player.sendMessage("Right-click again to confirm building your home here, or wait 5s to cancel.");
-                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                confirmedBuildLocations.remove(uuid);
-                            }, 100L);
-
-                        }
-                    }
+        if (isMainHandRightClick(event.getHand(), event.getAction())) {
+            ItemStack item = requireNonNull(event.getItem());
+            if (isBlueprint(item)) {
+                Player player = event.getPlayer();
+                if (hasNoSettlement(player)) {
+                    startSettlement(player);
                 }
             }
         }
+    }
+
+
+    @EventHandler
+    public void onHeldItemChanged(PlayerItemHeldEvent event) {
+        // Check for user holding the blueprint book
     }
 
     private void createParticleBoundary(Player player, Clipboard clipboard) {
@@ -118,6 +88,7 @@ public class PlayerListener implements Listener {
         BlockVector3 min = clipboard.getMinimumPoint();
         BlockVector3 dimensions = clipboard.getDimensions();
 
+        // Offset values from origin to boundary corners
         double minOffsetX = min.getBlockX() - origin.getBlockX();
         double maxOffsetX = max.getBlockX() - origin.getBlockX();
         double minOffsetZ = min.getBlockZ() - origin.getBlockZ();
@@ -167,6 +138,64 @@ public class PlayerListener implements Listener {
                     .spawn();
         }
     }
+
+    private boolean hasNoSettlement(Player player) {
+        String uuid = getUUID(player);
+
+        Document playerDoc = dbHandler.getPlayer(uuid);
+        Document playerSettlement = playerDoc.get("settlement", Document.class);
+        Document playerHome = playerSettlement.get("home", Document.class);
+
+        return playerHome.getInteger("level") == 0;
+    }
+
+    private void startSettlement(Player player) {
+        String uuid = getUUID(player);
+        Location playerLoc = player.getLocation();
+
+        StructureBuilder structBuilder = new StructureBuilder(player);
+        Clipboard newHome = structBuilder.load("home1");
+
+        if (confirmedBuildLocations.containsKey(uuid)) {
+            player.sendMessage("Settling down here");
+            Location buildLocation = confirmedBuildLocations.get(uuid);
+
+            List<Integer> homeCoords = new ArrayList<>();
+            homeCoords.set(0, buildLocation.getBlockX());
+            homeCoords.set(1, buildLocation.getBlockY());
+            homeCoords.set(2, buildLocation.getBlockZ());
+
+            dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
+            dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
+
+            structBuilder.build(newHome);
+        } else {
+            confirmedBuildLocations.put(uuid, playerLoc);
+            createParticleBoundary(player, newHome);
+            player.sendMessage("Right-click again to build your settlement home here, or wait 5s to cancel.");
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                confirmedBuildLocations.remove(uuid);
+            }, 100L);
+
+        }
+    }
+
+    private boolean isBlueprint(ItemStack item) {
+        boolean check = false;
+        if (item.getType() == Material.WRITTEN_BOOK) {
+            BookMeta bm = (BookMeta) item.getItemMeta();
+            if (bm != null && Objects.equals(bm.getTitle(), "Settlement")) {
+                check = true;
+            }
+        }
+
+        return check;
+    }
+
+    private boolean isMainHandRightClick(EquipmentSlot slot, Action action) {
+        return slot == EquipmentSlot.HAND && (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
+    }
+
 
     private String getUUID(Player player) {
         return player.getUniqueId().toString();
