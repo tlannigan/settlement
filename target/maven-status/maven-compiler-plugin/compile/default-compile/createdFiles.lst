@@ -1,4 +1,5 @@
 ca\tlannigan\settlement\DatabaseHandler.class
+ca\tlannigan\settlement\AdvancementManager.class
 ca\tlannigan\settlement\PlayerListener.class
 ca\tlannigan\settlement\StructureBuilder.class
 ca\tlannigan\settlement\commands\CommandDescription.class

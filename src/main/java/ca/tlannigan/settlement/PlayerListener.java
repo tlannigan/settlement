@@ -36,7 +36,7 @@ public class PlayerListener implements Listener {
         super();
         this.plugin = Bukkit.getPluginManager().getPlugin("Settlement");
         this.dbHandler = new DatabaseHandler(config);
-        this.confirmedBuildLocations = new HashMap<String, Location>();
+        this.confirmedBuildLocations = new HashMap<>();
     }
 
     @EventHandler
@@ -69,7 +69,7 @@ public class PlayerListener implements Listener {
             ItemStack item = requireNonNull(event.getItem());
             if (isBlueprint(item)) {
                 Player player = event.getPlayer();
-                if (hasNoSettlement(player)) {
+                if (!hasSettlement(player)) {
                     startSettlement(player);
                 }
             }
@@ -80,6 +80,13 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onHeldItemChanged(PlayerItemHeldEvent event) {
         // Check for user holding the blueprint book
+        Player player = event.getPlayer();
+        int slot = event.getNewSlot();
+        ItemStack item = player.getInventory().getItem(slot);
+
+        if (isBlueprint(item)) {
+
+        }
     }
 
     private void createParticleBoundary(Player player, Clipboard clipboard) {
@@ -139,14 +146,14 @@ public class PlayerListener implements Listener {
         }
     }
 
-    private boolean hasNoSettlement(Player player) {
+    private boolean hasSettlement(Player player) {
         String uuid = getUUID(player);
 
         Document playerDoc = dbHandler.getPlayer(uuid);
         Document playerSettlement = playerDoc.get("settlement", Document.class);
         Document playerHome = playerSettlement.get("home", Document.class);
 
-        return playerHome.getInteger("level") == 0;
+        return playerHome.getInteger("level") > 0;
     }
 
     private void startSettlement(Player player) {
