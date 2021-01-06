@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import java.util.Iterator;
 
 public class AdvancementManager {
-    public boolean hasAdvancement(Player player, String namespacedKey) {
+    public static boolean hasAdvancement(Player player, String namespacedKey) {
         Advancement adv = null;
         for (Iterator<Advancement> iter = Bukkit.getServer().advancementIterator(); iter.hasNext(); ) {
             Advancement serverAdv = iter.next();
