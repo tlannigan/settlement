@@ -1,5 +1,6 @@
 package ca.tlannigan.settlement;
 
+import ca.tlannigan.settlement.structures.Home;
 import com.destroystokyo.paper.ParticleBuilder;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -160,8 +161,8 @@ public class PlayerListener implements Listener {
         String uuid = getUUID(player);
         Location playerLoc = player.getLocation();
 
-        StructureBuilder structBuilder = new StructureBuilder(player);
-        Clipboard newHome = structBuilder.load("home1");
+        Home home1 = new Home(player);
+        Clipboard homeSchematic = home1.load("home1");
 
         if (confirmedBuildLocations.containsKey(uuid)) {
             player.sendMessage("Settling down here");
@@ -175,10 +176,10 @@ public class PlayerListener implements Listener {
             dbHandler.updatePlayer(uuid, "settlement.home.level", 1);
             dbHandler.updatePlayer(uuid, "settlement.home.location", homeCoords);
 
-            structBuilder.build(newHome);
+            home1.build(homeSchematic);
         } else {
             confirmedBuildLocations.put(uuid, playerLoc);
-            createParticleBoundary(player, newHome);
+            createParticleBoundary(player, homeSchematic);
             player.sendMessage("Right-click again to build your settlement home here, or wait 5s to cancel.");
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 confirmedBuildLocations.remove(uuid);
